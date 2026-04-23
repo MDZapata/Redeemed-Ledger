@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Redeemed Ledger">
+<meta name="theme-color" content="#0d0d16">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>Redeemed Ledger</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d16;--card:#13131f;--bdr:#252540;
+  --purple:#a855f7;--purple-lo:#2d1a4a;--purple-hi:#c084fc;
+  --lime:#84cc16;--lime-lo:#1e3008;--lime-hi:#a3e635;
+  --blue:#3b82f6;--blue-lo:#0f1e40;--blue-hi:#60a5fa;
+  --red:#ef4444;--red-lo:#2d0f0f;--red-hi:#f87171;
+  --txt:#f0eeff;--txt2:#8a89aa;--txt3:#45445e;
+  --r:10px;
+  --safe-top:env(safe-area-inset-top);
+  --safe-bottom:env(safe-area-inset-bottom);
+}
+html,body{min-height:100vh;background:var(--bg);font-family:system-ui,-apple-system,sans-serif;color:var(--txt)}
+body{padding-bottom:calc(3rem + var(--safe-bottom))}
+.wrap{max-width:640px;margin:0 auto;padding:calc(1.5rem + var(--safe-top)) 1.25rem 0}
+.brand{font-size:22px;font-weight:700;letter-spacing:.03em;margin-bottom:3px}
+.brand span.p{color:var(--purple-hi)}
+.brand span.b{color:var(--blue-hi)}
+.brand span.l{color:var(--lime-hi)}
+.sub{font-size:12px;color:var(--txt2);margin-bottom:1.5rem}
+.section{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:1.25rem;margin-bottom:.875rem}
+.sec-title{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);font-weight:600;margin-bottom:1rem}
+
+/* Balance */
+.balance-big{font-size:36px;font-weight:700;color:var(--lime-hi);font-variant-numeric:tabular-nums;margin-bottom:.25rem}
+.balance-lbl{font-size:12px;color:var(--txt2);margin-bottom:.875rem}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.met{background:var(--bg);border-radius:8px;padding:.65rem .875rem;border:1px solid var(--bdr)}
+.met-val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.met-lbl{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+
+/* Week summary */
+.week-box{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:.875rem 1rem;margin-top:.875rem}
+.week-title{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--txt2);margin-bottom:.6rem}
+.week-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
+.week-row span:first-child{font-size:12px;color:var(--txt2)}
+.week-row span:last-child{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.week-divider{border:none;border-top:1px solid var(--bdr);margin:.5rem 0}
+.net-positive{color:var(--lime-hi)}
+.net-negative{color:var(--red-hi)}
+
+/* Tabs */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:1rem}
+.tab{padding:9px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg);color:var(--txt2);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.tab.active-income{background:var(--lime-lo);color:var(--lime-hi);border-color:var(--lime)}
+.tab.active-expense{background:var(--red-lo);color:var(--red-hi);border-color:var(--red)}
+
+/* Forms */
+.panel{display:none}
+.panel.active{display:block}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.875rem}
+.input-grid.single{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.07em}
+.field input,.field textarea,.field select{background:var(--bg);border:1px solid var(--bdr);border-radius:7px;padding:10px 11px;color:var(--txt);font-size:16px;outline:none;font-family:inherit;width:100%}
+.field input:focus,.field textarea:focus{border-color:var(--purple)}
+.field textarea{resize:vertical;min-height:70px;font-size:14px}
+
+/* Percentages */
+.pct-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.875rem}
+.pct-wrap{display:flex;align-items:center;gap:6px}
+.pct-wrap input{flex:1;background:var(--bg);border:1px solid var(--bdr);border-radius:7px;padding:9px 10px;color:var(--txt);font-size:14px;font-weight:600;outline:none;min-width:0}
+.pct-wrap input:focus{border-color:var(--purple)}
+.sym{font-size:13px;color:var(--txt2)}
+.pct-warn{font-size:11px;color:var(--red-hi);margin-bottom:.5rem;display:none}
+
+/* Preview strip */
+.preview-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:1rem}
+.pstrip{background:var(--bg);border-radius:8px;padding:.65rem .75rem;border:1px solid var(--bdr);text-align:center}
+.pstrip-val{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.pstrip-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+
+/* Itemized */
+.itemize-toggle{display:flex;align-items:center;gap:8px;margin-bottom:.875rem;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.itemize-toggle span{font-size:12px;color:var(--txt2)}
+.toggle-arrow{font-size:11px;color:var(--txt3);transition:transform .2s}
+.toggle-arrow.open{transform:rotate(90deg)}
+.itemized-section{display:none;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:.875rem;margin-bottom:.875rem}
+.itemized-section.open{display:block}
+.item-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin-bottom:6px}
+.item-row input{font-size:14px;padding:7px 9px}
+.item-row input.amt{width:90px}
+.item-remove{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:16px;padding:2px 4px;-webkit-tap-highlight-color:transparent}
+.item-remove:hover{color:var(--red-hi)}
+.add-item-btn{font-size:12px;color:var(--txt2);background:none;border:1px dashed var(--bdr);border-radius:6px;padding:6px 12px;cursor:pointer;width:100%;margin-top:2px}
+.add-item-btn:hover{color:var(--txt);border-color:var(--txt2)}
+
+/* Buttons */
+.btn{width:100%;padding:12px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:opacity .15s;-webkit-tap-highlight-color:transparent}
+.btn-income{background:var(--lime-lo);color:var(--lime-hi);border:1px solid var(--lime)}
+.btn-income:hover{opacity:.8}
+.btn-expense{background:var(--red-lo);color:var(--red-hi);border:1px solid var(--red)}
+.btn-expense:hover{opacity:.8}
+.btn-set{background:var(--bg);color:var(--txt2);border:1px solid var(--bdr);font-size:12px;padding:9px;margin-top:.5rem}
+.btn-set:hover{color:var(--txt);border-color:var(--txt2)}
+
+/* History */
+.history-filters{display:flex;gap:6px;margin-bottom:.875rem;flex-wrap:wrap}
+.filter-btn{background:var(--bg);border:1px solid var(--bdr);border-radius:20px;color:var(--txt2);font-size:11px;padding:4px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.filter-btn.active{background:var(--purple-lo);color:var(--purple-hi);border-color:var(--purple)}
+.no-history{text-align:center;padding:1.75rem;color:var(--txt3);font-size:13px}
+.hi{padding:.75rem 0;border-bottom:1px solid var(--bdr)}
+.hi:last-child{border-bottom:none}
+.hi-top{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start}
+.hi-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.hi-dot.income{background:var(--lime-hi)}
+.hi-dot.expense{background:var(--red-hi)}
+.hi-meta{display:flex;flex-direction:column;gap:3px}
+.hi-type{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.hi-type.income{color:var(--lime-hi)}
+.hi-type.expense{color:var(--red-hi)}
+.hi-date{font-size:11px;color:var(--txt2)}
+.hi-note{font-size:12px;color:var(--txt2);margin-top:2px}
+.hi-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.hi-amt{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.hi-amt.income{color:var(--lime-hi)}
+.hi-amt.expense{color:var(--red-hi)}
+.hi-pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.pill{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600}
+.pill-p{background:var(--purple-lo);color:var(--purple-hi)}
+.pill-b{background:var(--blue-lo);color:var(--blue-hi)}
+.pill-r{background:var(--red-lo);color:var(--red-hi)}
+.hi-items{margin-top:6px;padding-left:18px}
+.hi-item-line{font-size:11px;color:var(--txt2);padding:1px 0}
+.del-btn{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:16px;padding:2px 5px;line-height:1;-webkit-tap-highlight-color:transparent}
+.del-btn:hover{color:var(--red-hi)}
+
+/* Footer */
+.save-badge{font-size:10px;color:var(--txt3);margin-top:.5rem;text-align:right}
+.save-badge span{color:var(--lime-hi)}
+.reset-row{text-align:right;margin-top:.375rem}
+.reset-btn{background:none;border:none;color:var(--txt3);font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.reset-btn:hover{color:var(--red-hi)}
+
+/* Install banner */
+.install-banner{background:var(--purple-lo);border:1px solid var(--purple);border-radius:var(--r);padding:.875rem 1.1rem;margin-bottom:1rem;display:none}
+.install-banner p{font-size:12px;color:var(--purple-hi);line-height:1.6}
+.close-banner{float:right;background:none;border:none;color:var(--purple-hi);cursor:pointer;font-size:16px;line-height:1;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="install-banner" id="install-banner">
+    <button class="close-banner" onclick="closeBanner()">&#x2715;</button>
+    <p id="install-instructions"></p>
+  </div>
+
+  <div class="brand">
+    <span class="p">R</span><span class="b">e</span><span class="l">d</span><span class="p">e</span><span class="b">e</span><span class="l">m</span><span class="p">e</span><span class="b">d</span>&nbsp;<span class="l">Ledger</span>
+  </div>
+  <p class="sub">weekly paycheck stewardship tracker &mdash; saved to this device</p>
+
+  <!-- Balance -->
+  <div class="section">
+    <div class="sec-title">Balance</div>
+    <div class="balance-big" id="total-display">$0.00</div>
+    <div class="balance-lbl">in your account</div>
+    <div class="metrics">
+      <div class="met">
+        <div class="met-val" style="color:var(--purple-hi)" id="total-tithe">$0.00</div>
+        <div class="met-lbl">Total tithed</div>
+      </div>
+      <div class="met">
+        <div class="met-val" style="color:var(--blue-hi)" id="total-stocks">$0.00</div>
+        <div class="met-lbl">Total stocks</div>
+      </div>
+      <div class="met">
+        <div class="met-val" style="color:var(--red-hi)" id="total-spent">$0.00</div>
+        <div class="met-lbl">Total spent</div>
+      </div>
+    </div>
+    <div class="week-box">
+      <div class="week-title">This week</div>
+      <div class="week-row"><span>Earned (kept)</span><span id="week-earned" style="color:var(--lime-hi)">$0.00</span></div>
+      <div class="week-row"><span>Spent</span><span id="week-spent" style="color:var(--red-hi)">$0.00</span></div>
+      <hr class="week-divider">
+      <div class="week-row"><span style="font-weight:600;color:var(--txt)">Net this week</span><span id="week-net" class="net-positive">$0.00</span></div>
+    </div>
+  </div>
+
+  <!-- Log entry -->
+  <div class="section">
+    <div class="sec-title">Log entry</div>
+    <div class="tabs">
+      <button class="tab active-income" id="tab-income" onclick="switchTab('income')">+ Income</button>
+      <button class="tab" id="tab-expense" onclick="switchTab('expense')">- Expense</button>
+    </div>
+
+    <!-- Income panel -->
+    <div class="panel active" id="panel-income">
+      <div class="sec-title" style="margin-bottom:.6rem">Split percentages</div>
+      <div class="pct-row">
+        <div class="field">
+          <label>Tithe %</label>
+          <div class="pct-wrap"><input type="number" id="tithe-pct" value="10" min="0" max="100" step="1"><span class="sym">%</span></div>
+        </div>
+        <div class="field">
+          <label>Stocks %</label>
+          <div class="pct-wrap"><input type="number" id="stocks-pct" value="10" min="0" max="100" step="1"><span class="sym">%</span></div>
+        </div>
+      </div>
+      <div class="pct-warn" id="pct-warn">Percentages exceed 100%.</div>
+      <button class="btn btn-set" onclick="applyPcts()" style="margin-bottom:1rem">Apply percentages</button>
+
+      <div class="input-grid">
+        <div class="field">
+          <label>Starting balance ($)</label>
+          <input type="number" id="starting-bal" placeholder="First entry only" min="0" step="0.01" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Paycheck amount ($)</label>
+          <input type="number" id="paycheck" placeholder="0.00" min="0" step="0.01" oninput="updatePreview()">
+        </div>
+      </div>
+      <div class="preview-strip">
+        <div class="pstrip">
+          <div class="pstrip-val" style="color:var(--purple-hi)" id="prev-tithe">$0.00</div>
+          <div class="pstrip-lbl" style="color:var(--purple-hi)" id="prev-tithe-lbl">Tithe (10%)</div>
+        </div>
+        <div class="pstrip">
+          <div class="pstrip-val" style="color:var(--blue-hi)" id="prev-stocks">$0.00</div>
+          <div class="pstrip-lbl" style="color:var(--blue-hi)" id="prev-stocks-lbl">Stocks (10%)</div>
+        </div>
+        <div class="pstrip">
+          <div class="pstrip-val" style="color:var(--lime-hi)" id="prev-keep">$0.00</div>
+          <div class="pstrip-lbl" style="color:var(--lime-hi)" id="prev-keep-lbl">Keep (80%)</div>
+        </div>
+      </div>
+      <button class="btn btn-income" onclick="logIncome()">+ Log paycheck</button>
+    </div>
+
+    <!-- Expense panel -->
+    <div class="panel" id="panel-expense">
+      <div class="input-grid">
+        <div class="field">
+          <label>Total spent ($)</label>
+          <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Note (optional)</label>
+          <input type="text" id="exp-note" placeholder="e.g. groceries, gas...">
+        </div>
+      </div>
+
+      <div class="itemize-toggle" onclick="toggleItemize()">
+        <span class="toggle-arrow" id="itemize-arrow">&#9654;</span>
+        <span>Break it down by item (optional)</span>
+      </div>
+      <div class="itemized-section" id="itemized-section">
+        <div id="items-list"></div>
+        <button class="add-item-btn" onclick="addItem()">+ Add item</button>
+        <div style="font-size:11px;color:var(--txt2);margin-top:.5rem">Items auto-total the amount above</div>
+      </div>
+
+      <button class="btn btn-expense" onclick="logExpense()">- Log expense</button>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="section">
+    <div class="sec-title">History</div>
+    <div class="history-filters">
+      <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" id="filter-income" onclick="setFilter('income')">Income</button>
+      <button class="filter-btn" id="filter-expense" onclick="setFilter('expense')">Expenses</button>
+    </div>
+    <div id="history-list"><div class="no-history">No entries yet</div></div>
+    <div class="save-badge" id="save-badge"></div>
+    <div class="reset-row"><button class="reset-btn" onclick="confirmReset()">Reset all data</button></div>
+  </div>
+
+</div>
+<script>
+var STORAGE_KEY='redeemed-ledger-v2';
+var deferredPrompt=null;
+var currentFilter='all';
+var itemizeOpen=false;
+var itemCount=0;
+
+var state={
+  balance:0,tithePct:10,stocksPct:10,
+  totalTithe:0,totalStocks:0,totalSpent:0,
+  history:[]
+};
+
+function load(){
+  try{
+    var raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      state=JSON.parse(raw);
+      document.getElementById('tithe-pct').value=state.tithePct;
+      document.getElementById('stocks-pct').value=state.stocksPct;
+    }
+  }catch(e){}
+}
+
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    var now=new Date();
+    document.getElementById('save-badge').innerHTML='Saved &mdash; <span>'+now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+'</span>';
+  }catch(e){}
+}
+
+function fmt(n){return '$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+function switchTab(t){
+  document.getElementById('panel-income').classList.toggle('active',t==='income');
+  document.getElementById('panel-expense').classList.toggle('active',t==='expense');
+  document.getElementById('tab-income').className='tab'+(t==='income'?' active-income':'');
+  document.getElementById('tab-expense').className='tab'+(t==='expense'?' active-expense':'');
+}
+
+function applyPcts(){
+  var t=parseFloat(document.getElementById('tithe-pct').value)||0;
+  var s=parseFloat(document.getElementById('stocks-pct').value)||0;
+  var w=document.getElementById('pct-warn');
+  if(t+s>100){w.style.display='block';return;}
+  w.style.display='none';
+  state.tithePct=t;state.stocksPct=s;
+  save();updatePreview();updateLabels();
+}
+
+function updateLabels(){
+  var k=100-state.tithePct-state.stocksPct;
+  document.getElementById('prev-tithe-lbl').textContent='Tithe ('+state.tithePct+'%)';
+  document.getElementById('prev-stocks-lbl').textContent='Stocks ('+state.stocksPct+'%)';
+  document.getElementById('prev-keep-lbl').textContent='Keep ('+k+'%)';
+}
+
+function updatePreview(){
+  var p=parseFloat(document.getElementById('paycheck').value)||0;
+  var t=p*state.tithePct/100;
+  var s=p*state.stocksPct/100;
+  document.getElementById('prev-tithe').textContent=fmt(t);
+  document.getElementById('prev-stocks').textContent=fmt(s);
+  document.getElementById('prev-keep').textContent=fmt(p-t-s);
+}
+
+function logIncome(){
+  var startEl=document.getElementById('starting-bal');
+  var payEl=document.getElementById('paycheck');
+  var startVal=parseFloat(startEl.value);
+  var pay=parseFloat(payEl.value)||0;
+  if(pay<=0)return;
+  if(state.history.length===0&&!isNaN(startVal)&&startVal>0)state.balance=startVal;
+  var tithe=pay*state.tithePct/100;
+  var stocks=pay*state.stocksPct/100;
+  var keep=pay-tithe-stocks;
+  state.balance+=keep;
+  state.totalTithe+=tithe;
+  state.totalStocks+=stocks;
+  var now=new Date();
+  state.history.unshift({
+    type:'income',
+    date:now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}),
+    ts:now.getTime(),
+    pay,tithe,stocks,keep,
+    tPct:state.tithePct,sPct:state.stocksPct
+  });
+  startEl.value='';payEl.value='';
+  document.getElementById('prev-tithe').textContent='$0.00';
+  document.getElementById('prev-stocks').textContent='$0.00';
+  document.getElementById('prev-keep').textContent='$0.00';
+  save();render();
+}
+
+function toggleItemize(){
+  itemizeOpen=!itemizeOpen;
+  document.getElementById('itemized-section').classList.toggle('open',itemizeOpen);
+  document.getElementById('itemize-arrow').classList.toggle('open',itemizeOpen);
+  if(itemizeOpen&&document.getElementById('items-list').children.length===0)addItem();
+}
+
+function addItem(){
+  var list=document.getElementById('items-list');
+  var id='item-'+itemCount++;
+  var div=document.createElement('div');
+  div.className='item-row';
+  div.id=id;
+  div.innerHTML='<input type="text" placeholder="Description" oninput="syncItemTotal()">'+
+    '<input type="number" class="amt" placeholder="$0.00" min="0" step="0.01" oninput="syncItemTotal()">'+
+    '<button class="item-remove" onclick="removeItem(\''+id+'\')">&#x2715;</button>';
+  list.appendChild(div);
+}
+
+function removeItem(id){
+  var el=document.getElementById(id);
+  if(el)el.remove();
+  syncItemTotal();
+}
+
+function syncItemTotal(){
+  var rows=document.getElementById('items-list').querySelectorAll('.item-row');
+  var total=0;
+  rows.forEach(function(r){
+    var amt=parseFloat(r.querySelectorAll('input')[1].value)||0;
+    total+=amt;
+  });
+  if(total>0)document.getElementById('exp-amount').value=total.toFixed(2);
+}
+
+function getItems(){
+  var rows=document.getElementById('items-list').querySelectorAll('.item-row');
+  var items=[];
+  rows.forEach(function(r){
+    var inputs=r.querySelectorAll('input');
+    var desc=inputs[0].value.trim();
+    var amt=parseFloat(inputs[1].value)||0;
+    if(desc||amt>0)items.push({desc:desc||'Item',amt:amt});
+  });
+  return items;
+}
+
+function logExpense(){
+  var amtEl=document.getElementById('exp-amount');
+  var noteEl=document.getElementById('exp-note');
+  var amt=parseFloat(amtEl.value)||0;
+  if(amt<=0)return;
+  var note=noteEl.value.trim();
+  var items=itemizeOpen?getItems():[];
+  state.balance-=amt;
+  state.totalSpent+=amt;
+  var now=new Date();
+  state.history.unshift({
+    type:'expense',
+    date:now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}),
+    ts:now.getTime(),
+    amt,note,items
+  });
+  amtEl.value='';noteEl.value='';
+  document.getElementById('items-list').innerHTML='';
+  itemizeOpen=false;
+  document.getElementById('itemized-section').classList.remove('open');
+  document.getElementById('itemize-arrow').classList.remove('open');
+  save();render();
+}
+
+function deleteEntry(i){
+  var e=state.history[i];
+  if(e.type==='income'){
+    state.balance-=e.keep;
+    state.totalTithe-=e.tithe;
+    state.totalStocks-=e.stocks;
+  } else {
+    state.balance+=e.amt;
+    state.totalSpent-=e.amt;
+  }
+  state.history.splice(i,1);
+  save();render();
+}
+
+function setFilter(f){
+  currentFilter=f;
+  ['all','income','expense'].forEach(function(x){
+    document.getElementById('filter-'+x).classList.toggle('active',x===f);
+  });
+  render();
+}
+
+function getWeekStats(){
+  var now=new Date();
+  var startOfWeek=new Date(now);
+  startOfWeek.setHours(0,0,0,0);
+  startOfWeek.setDate(now.getDate()-now.getDay());
+  var earned=0,spent=0;
+  state.history.forEach(function(e){
+    if(e.ts>=startOfWeek.getTime()){
+      if(e.type==='income')earned+=e.keep;
+      else spent+=e.amt;
+    }
+  });
+  return{earned,spent,net:earned-spent};
+}
+
+function confirmReset(){
+  if(confirm('Reset all data? This cannot be undone.')){
+    state={balance:0,tithePct:10,stocksPct:10,totalTithe:0,totalStocks:0,totalSpent:0,history:[]};
+    document.getElementById('tithe-pct').value=10;
+    document.getElementById('stocks-pct').value=10;
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('save-badge').innerHTML='';
+    updateLabels();render();
+  }
+}
+
+function closeBanner(){
+  document.getElementById('install-banner').style.display='none';
+  localStorage.setItem('banner-dismissed','1');
+}
+
+function showInstallBanner(){
+  if(localStorage.getItem('banner-dismissed'))return;
+  var banner=document.getElementById('install-banner');
+  var inst=document.getElementById('install-instructions');
+  var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+  if(isStandalone)return;
+  if(isIOS){
+    inst.innerHTML='<strong>Add to Home Screen:</strong> tap the Share button in Safari, then tap "Add to Home Screen" to install as an app.';
+    banner.style.display='block';
+  } else if(deferredPrompt){
+    inst.innerHTML='<strong>Install as app:</strong> <button class="btn btn-income" style="display:inline-block;width:auto;padding:6px 14px;font-size:12px;margin-left:8px" onclick="installApp()">Install</button>';
+    banner.style.display='block';
+  }
+}
+
+function installApp(){
+  if(deferredPrompt){deferredPrompt.prompt();closeBanner();}
+}
+
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();deferredPrompt=e;showInstallBanner();
+});
+
+function render(){
+  document.getElementById('total-display').textContent=fmt(state.balance);
+  document.getElementById('total-tithe').textContent=fmt(state.totalTithe);
+  document.getElementById('total-stocks').textContent=fmt(state.totalStocks);
+  document.getElementById('total-spent').textContent=fmt(state.totalSpent);
+
+  var ws=getWeekStats();
+  document.getElementById('week-earned').textContent=fmt(ws.earned);
+  document.getElementById('week-spent').textContent=fmt(ws.spent);
+  var netEl=document.getElementById('week-net');
+  netEl.textContent=(ws.net>=0?'+':'-')+fmt(ws.net);
+  netEl.className=ws.net>=0?'net-positive':'net-negative';
+
+  var filtered=state.history.filter(function(e){
+    return currentFilter==='all'||e.type===currentFilter;
+  });
+
+  var el=document.getElementById('history-list');
+  if(!filtered.length){el.innerHTML='<div class="no-history">No entries yet</div>';return;}
+
+  el.innerHTML=filtered.map(function(e,i){
+    var realIndex=state.history.indexOf(e);
+    if(e.type==='income'){
+      return '<div class="hi">'+
+        '<div class="hi-top">'+
+          '<div class="hi-dot income"></div>'+
+          '<div class="hi-meta">'+
+            '<span class="hi-type income">Paycheck</span>'+
+            '<span class="hi-date">'+e.date+'</span>'+
+            '<div class="hi-pills">'+
+              '<span class="pill pill-p">Tithe '+e.tPct+'% '+fmt(e.tithe)+'</span>'+
+              '<span class="pill pill-b">Stocks '+e.sPct+'% '+fmt(e.stocks)+'</span>'+
+            '</div>'+
+          '</div>'+
+          '<div class="hi-right">'+
+            '<span class="hi-amt income">+'+fmt(e.keep)+' kept</span>'+
+            '<button class="del-btn" onclick="deleteEntry('+realIndex+')">&#x2715;</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    } else {
+      var itemsHtml='';
+      if(e.items&&e.items.length){
+        itemsHtml='<div class="hi-items">'+e.items.map(function(it){
+          return '<div class="hi-item-line">'+it.desc+' &mdash; '+fmt(it.amt)+'</div>';
+        }).join('')+'</div>';
+      }
+      return '<div class="hi">'+
+        '<div class="hi-top">'+
+          '<div class="hi-dot expense"></div>'+
+          '<div class="hi-meta">'+
+            '<span class="hi-type expense">Expense</span>'+
+            '<span class="hi-date">'+e.date+'</span>'+
+            (e.note?'<span class="hi-note">'+e.note+'</span>':'')+
+          '</div>'+
+          '<div class="hi-right">'+
+            '<span class="hi-amt expense">-'+fmt(e.amt)+'</span>'+
+            '<button class="del-btn" onclick="deleteEntry('+realIndex+')">&#x2715;</button>'+
+          '</div>'+
+        '</div>'+
+        itemsHtml+
+      '</div>';
+    }
+  }).join('');
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+
+load();updateLabels();render();
+setTimeout(showInstallBanner,1500);
+</script>
+</body>
+</html>
